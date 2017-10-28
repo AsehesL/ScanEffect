@@ -149,13 +149,17 @@ public class HolographicEffect : MonoBehaviour
         return instance.m_IsInitialized;
     }
 
-    public static void CallRender(Renderer[] renderer)
+    public static void CallRender(Vector3 worldPosition, Renderer[] renderer)
     {
         if (!IsInitialized())
             return;
         if (instance.m_IsShowingEffect)
         {
             if (renderer == null)
+                return;
+            Vector3 pjpos = instance.m_Camera.worldToCameraMatrix.MultiplyPoint(worldPosition);
+            pjpos = instance.m_Camera.projectionMatrix.MultiplyPoint(pjpos);
+            if (pjpos.x < -1 || pjpos.x > 1 || pjpos.y < -1 || pjpos.y > 1 || pjpos.z < -1 || pjpos.z > 1)
                 return;
             for (int i = 0; i < renderer.Length; i++)
             {

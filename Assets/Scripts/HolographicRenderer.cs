@@ -29,6 +29,6 @@ public class HolographicRenderer : MonoBehaviour
     void OnRenderObject()
     {
         if (m_Renderers != null)
-            HolographicEffect.CallRender(m_Renderers);
+            HolographicEffect.CallRender(transform.position, m_Renderers);
     }
 }
