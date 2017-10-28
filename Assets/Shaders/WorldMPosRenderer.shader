@@ -1,6 +1,6 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+﻿// 该shader用于渲染世界空间的扫描效果
 
-Shader "Hidden/WorldMosic"
+Shader "Hidden/WorldMPosRenderer"
 {
 	Properties
 	{

@@ -1,6 +1,5 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-Shader "Hidden/MosicLed"
+﻿
+Shader "Hidden/MosicEffect"
 {
 	Properties
 	{
@@ -40,9 +39,9 @@ Shader "Hidden/MosicLed"
 			
 			sampler2D _MainTex;
 			sampler2D _PreTex;
-			sampler2D _LedTex;
+			sampler2D _EffectTex;
 
-			float2 _LedScale;
+			float2 _EffectScale;
 
 			fixed4 frag (v2f i) : SV_Target
 			{
@@ -50,10 +49,10 @@ Shader "Hidden/MosicLed"
 #if UNITY_UV_STARTS_AT_TOP
 //			i.uv.y = 1 - i.uv.y;
 #endif
-				float2 fl = floor(i.uv * _LedScale);
-				float dp = tex2D(_PreTex, (fl + float2(0.5, 0.5)) / _LedScale);
+				float2 fl = floor(i.uv * _EffectScale);
+				float dp = tex2D(_PreTex, (fl + float2(0.5, 0.5)) / _EffectScale);
 				
-				float4 led = tex2D(_LedTex, i.uv * _LedScale - fl);
+				float4 led = tex2D(_EffectTex, i.uv * _EffectScale - fl);
 				
 				col.rgb += led.rgb*dp;
 

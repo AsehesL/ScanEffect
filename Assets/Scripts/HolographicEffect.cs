@@ -2,25 +2,54 @@
 using System.Collections;
 using UnityEngine.Rendering;
 
-public class LedSystem : MonoBehaviour
+public class HolographicEffect : MonoBehaviour
 {
 
-    private static LedSystem instance;
-
-    public Shader replaceShader;
+    private static HolographicEffect instance;
+    
+    /// <summary>
+    /// 渲染世界空间扫描效果
+    /// </summary>
     public Shader worldRenderShader;
+    /// <summary>
+    /// 渲染全息效果
+    /// </summary>
     public Shader effectShader;
 
+    /// <summary>
+    /// 扫描最大持续时间
+    /// </summary>
     public float maxScanTime;
+    /// <summary>
+    /// 扫描淡出时间
+    /// </summary>
     public float fadeScanTime;
 
-    public float maxLedTime;
-    public float fadeLedTime;
+    /// <summary>
+    /// 最大停留时间
+    /// </summary>
+    public float maxStayTime;
+    /// <summary>
+    /// 结束淡出时间
+    /// </summary>
+    public float fadeOutTime;
 
-    public Texture2D ledTex;
+    /// <summary>
+    /// 全息效果纹理
+    /// </summary>
+    public Texture2D holographicTex;
 
+    /// <summary>
+    /// 半径
+    /// </summary>
     public float radius;
+    /// <summary>
+    /// 淡出
+    /// </summary>
     public float fade;
+    /// <summary>
+    /// 淡出宽度
+    /// </summary>
     public float fadeWidth;
 
     private Material m_ReplaceMaterial;
@@ -35,8 +64,8 @@ public class LedSystem : MonoBehaviour
     private float m_ScanTime;
     private bool m_IsScaning;
 
-    private float m_LedTime;
-    private bool m_IsShowingLed;
+    private float m_CurrentTime;
+    private bool m_IsShowingEffect;
 
     private Camera m_Camera;
 
@@ -46,23 +75,21 @@ public class LedSystem : MonoBehaviour
             return;
         instance = this;
 
-        if (replaceShader == null || !replaceShader.isSupported)
-            return;
         if (effectShader == null || !effectShader.isSupported)
             return;
         if (worldRenderShader == null || !worldRenderShader.isSupported)
             return;
-        m_ReplaceMaterial = new Material(replaceShader);
+        m_ReplaceMaterial = new Material(Shader.Find("Unlit/Color"));
         m_EffectMaterial = new Material(effectShader);
         m_WorldRenderMaterial = new Material(worldRenderShader);
-        if (ledTex)
-            m_EffectMaterial.SetTexture("_LedTex", ledTex);
+        if (holographicTex)
+            m_EffectMaterial.SetTexture("_EffectTex", holographicTex);
 
-        m_EffectMaterial.SetVector("_LedScale", new Vector4((float) Screen.width/10, (float) Screen.height/10, 0, 0));
+        m_EffectMaterial.SetVector("_EffectScale", new Vector4((float) Screen.width/10, (float) Screen.height/10, 0, 0));
 
         m_RenderTexture = new RenderTexture(Screen.width, Screen.height, 16);
         m_CommandBuffer = new CommandBuffer();
-        m_CommandBuffer.name = "[Led Effect]";
+        m_CommandBuffer.name = "[Holographic Effect]";
         m_Camera = GetComponent<Camera>();
         m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_CommandBuffer);
 
@@ -74,12 +101,12 @@ public class LedSystem : MonoBehaviour
 
     void Update()
     {
-        if (m_IsShowingLed)
+        if (m_IsShowingEffect)
         {
-            m_LedTime += Time.deltaTime;
-            if (m_LedTime > maxLedTime)
+            m_CurrentTime += Time.deltaTime;
+            if (m_CurrentTime > maxStayTime)
             {
-                m_IsShowingLed = false;
+                m_IsShowingEffect = false;
             }
         }
         if (m_IsScaning)
@@ -122,7 +149,7 @@ public class LedSystem : MonoBehaviour
     {
         if (!IsInitialized())
             return;
-        if (instance.m_IsShowingLed)
+        if (instance.m_IsShowingEffect)
         {
             if (renderer == null)
                 return;
@@ -141,8 +168,8 @@ public class LedSystem : MonoBehaviour
             return false;
         instance.m_WorldRenderMaterial.SetVector("internalCentPos", worldPosition);
         instance.m_IsScaning = true;
-        instance.m_IsShowingLed = true;
-        instance.m_LedTime = 0;
+        instance.m_IsShowingEffect = true;
+        instance.m_CurrentTime = 0;
         instance.m_ScanTime = 0;
         return true;
     }
@@ -159,16 +186,16 @@ public class LedSystem : MonoBehaviour
     void OnRenderImage(RenderTexture src, RenderTexture dst)
     {
 
-        if (m_IsScaning || m_IsShowingLed)
+        if (m_IsScaning || m_IsShowingEffect)
         {
             m_WorldRenderMaterial.SetMatrix("internalCameraToWorld", m_Camera.cameraToWorldMatrix);
             m_WorldRenderMaterial.SetVector("internalArg", new Vector4(radius*m_ScanTime, fade, fadeWidth, 1));
             float scanFade = 1 - Mathf.Clamp01((m_ScanTime - fadeScanTime)/(maxScanTime - fadeScanTime));
-            float ledFade = 1 - Mathf.Clamp01((m_LedTime - fadeLedTime)/(maxLedTime - fadeLedTime));
-            m_WorldRenderMaterial.SetVector("internalFade", new Vector4(scanFade, ledFade, 1, 1));
+            float efade = 1 - Mathf.Clamp01((m_CurrentTime - fadeOutTime)/(maxStayTime - fadeOutTime));
+            m_WorldRenderMaterial.SetVector("internalFade", new Vector4(scanFade, efade, 1, 1));
             RenderTexture rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 16);
             Graphics.Blit(m_RenderTexture, rt, m_WorldRenderMaterial);
-            RenderLed(src, dst, rt);
+            RenderEffect(src, dst, rt);
             RenderTexture.ReleaseTemporary(rt);
         }
         else
@@ -177,7 +204,7 @@ public class LedSystem : MonoBehaviour
         }
     }
 
-    private void RenderLed(RenderTexture src, RenderTexture dst, RenderTexture rt)
+    private void RenderEffect(RenderTexture src, RenderTexture dst, RenderTexture rt)
     {
         m_EffectMaterial.SetTexture("_PreTex", rt);
 

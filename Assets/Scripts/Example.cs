@@ -8,7 +8,7 @@ public class Example : MonoBehaviour {
 	void Update () {
 	    if (Input.GetMouseButtonDown(0))
 	    {
-	        LedSystem.CallScan(transform.position);
+	        HolographicEffect.CallScan(transform.position);
 	    }
 	}
 }

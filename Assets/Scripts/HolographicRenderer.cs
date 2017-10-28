@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class LedAgent : MonoBehaviour
+public class HolographicRenderer : MonoBehaviour
 {
     private Renderer[] m_Renderers;
 
@@ -29,6 +29,6 @@ public class LedAgent : MonoBehaviour
     void OnRenderObject()
     {
         if (m_Renderers != null)
-            LedSystem.CallRender(m_Renderers);
+            HolographicEffect.CallRender(m_Renderers);
     }
 }
