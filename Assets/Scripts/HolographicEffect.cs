@@ -51,6 +51,10 @@ public class HolographicEffect : MonoBehaviour
     /// 淡出宽度
     /// </summary>
     public float fadeWidth;
+    /// <summary>
+    /// 
+    /// </summary>
+    public float effectSize = 10;
 
     private Material m_ReplaceMaterial;
     private Material m_EffectMaterial;
@@ -85,7 +89,7 @@ public class HolographicEffect : MonoBehaviour
         if (holographicTex)
             m_EffectMaterial.SetTexture("_EffectTex", holographicTex);
 
-        m_EffectMaterial.SetVector("_EffectScale", new Vector4((float) Screen.width/10, (float) Screen.height/10, 0, 0));
+        m_EffectMaterial.SetVector("_EffectScale", new Vector4(((float) Screen.width)/ effectSize, ((float) Screen.height)/ effectSize, 0, 0));
 
         m_RenderTexture = new RenderTexture(Screen.width, Screen.height, 16);
         m_CommandBuffer = new CommandBuffer();
