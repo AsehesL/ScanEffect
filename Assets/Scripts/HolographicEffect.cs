@@ -196,13 +196,48 @@ public class HolographicEffect : MonoBehaviour
 
         if (m_IsScaning || m_IsShowingEffect)
         {
-            m_WorldRenderMaterial.SetMatrix("internalCameraToWorld", m_Camera.cameraToWorldMatrix);
+            Matrix4x4 frustumCorners = Matrix4x4.identity;
+
+            float fovWHalf = m_Camera.fieldOfView * 0.5f;
+
+            Vector3 toRight = m_Camera.transform.right * m_Camera.nearClipPlane * Mathf.Tan(fovWHalf * Mathf.Deg2Rad) * m_Camera.aspect;
+            Vector3 toTop = m_Camera.transform.up * m_Camera.nearClipPlane * Mathf.Tan(fovWHalf * Mathf.Deg2Rad);
+
+            Vector3 topLeft = (m_Camera.transform.forward * m_Camera.nearClipPlane - toRight + toTop);
+            float camScale = topLeft.magnitude * m_Camera.farClipPlane / m_Camera.nearClipPlane;
+
+            topLeft.Normalize();
+            topLeft *= camScale;
+
+            Vector3 topRight = (m_Camera.transform.forward * m_Camera.nearClipPlane + toRight + toTop);
+            topRight.Normalize();
+            topRight *= camScale;
+
+            Vector3 bottomRight = (m_Camera.transform.forward * m_Camera.nearClipPlane + toRight - toTop);
+            bottomRight.Normalize();
+            bottomRight *= camScale;
+
+            Vector3 bottomLeft = (m_Camera.transform.forward * m_Camera.nearClipPlane - toRight - toTop);
+            bottomLeft.Normalize();
+            bottomLeft *= camScale;
+
+            frustumCorners.SetRow(0, topLeft);
+            frustumCorners.SetRow(1, topRight);
+            frustumCorners.SetRow(2, bottomRight);
+            frustumCorners.SetRow(3, bottomLeft);
+            m_WorldRenderMaterial.SetMatrix("_FrustumCorners", frustumCorners);
+
+
+
+
+            //m_WorldRenderMaterial.SetMatrix("internalCameraToWorld", m_Camera.cameraToWorldMatrix);
             m_WorldRenderMaterial.SetVector("internalArg", new Vector4(radius*m_ScanTime, fade, fadeWidth, 1));
             float scanFade = 1 - Mathf.Clamp01((m_ScanTime - fadeScanTime)/(maxScanTime - fadeScanTime));
             float efade = 1 - Mathf.Clamp01((m_CurrentTime - fadeOutTime)/(maxStayTime - fadeOutTime));
             m_WorldRenderMaterial.SetVector("internalFade", new Vector4(scanFade, efade, 1, 1));
             RenderTexture rt = RenderTexture.GetTemporary(Screen.width, Screen.height, 16);
-            Graphics.Blit(m_RenderTexture, rt, m_WorldRenderMaterial);
+            //Graphics.Blit(m_RenderTexture, rt, m_WorldRenderMaterial);
+            CustomGraphicsBlit(m_RenderTexture, rt, m_WorldRenderMaterial);
             RenderEffect(src, dst, rt);
             RenderTexture.ReleaseTemporary(rt);
         }
@@ -217,5 +252,36 @@ public class HolographicEffect : MonoBehaviour
         m_EffectMaterial.SetTexture("_PreTex", rt);
 
         Graphics.Blit(src, dst, m_EffectMaterial);
+    }
+
+    private static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial)
+    {
+        //Graphics.Blit(source, dest, fxMaterial);
+        //return;
+        RenderTexture.active = dest;
+
+        fxMaterial.SetTexture("_MainTex", source);
+
+        GL.PushMatrix();
+        GL.LoadOrtho();
+
+        fxMaterial.SetPass(0);
+
+        GL.Begin(GL.QUADS);
+
+        GL.MultiTexCoord2(0, 0.0f, 0.0f);
+        GL.Vertex3(0.0f, 0.0f, 3.0f); // BL
+
+        GL.MultiTexCoord2(0, 1.0f, 0.0f);
+        GL.Vertex3(1.0f, 0.0f, 2.0f); // BR
+
+        GL.MultiTexCoord2(0, 1.0f, 1.0f);
+        GL.Vertex3(1.0f, 1.0f, 1.0f); // TR
+
+        GL.MultiTexCoord2(0, 0.0f, 1.0f);
+        GL.Vertex3(0.0f, 1.0f, 0.0f); // TL
+
+        GL.End();
+        GL.PopMatrix();
     }
 }
